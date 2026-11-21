@@ -3,6 +3,9 @@
 > 本文件供所有 agent 工具（Trae / Cursor / Claude Code / Copilot 等）自动识别。
 > Trae 下另有自动加载的副本：`.trae/rules/project-rules.md`，两份内容保持一致。
 
+## 项目资料
+- 学习原始资料：`Hello-Agents-V1.0.3-20260717.pdf`（位于项目根目录，已在 `.gitignore` 中忽略）
+
 ## 学习总结写作规约
 
 1. **位置**：每章的学习总结写在对应章节目录下，即 `Chapter-XX/README.md`
