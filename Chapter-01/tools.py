@@ -1,4 +1,5 @@
-import requests
+import requests, os
+from tavily import TavilyClient
 
 def get_weather(city: str) -> str:
     """
@@ -29,5 +30,46 @@ def get_weather(city: str) -> str:
         # 处理数据解析错误
         return f"错误:解析天⽓数据失败，可能是城市名称⽆效 - {e}"
 
-        
+def get_attraction(city: str, weather: str) -> str:
+    """
+    根据城市和天气，使用Tavily Search API搜索并返回优化后的景点推荐。
+    """
+    # 1. 从环境变量中读取API密钥
+    api_key = os.getenv("TAVILY_API_KEY")
+    if not api_key:
+        return "错误:未配置Tavily API密钥，请在环境变量中设置TAVILY_API_KEY"
     
+    # 2. 初始化Tavily客户端
+    tavily_client = TavilyClient(api_key=api_key)
+
+    # 3. 构建搜索查询
+    query = f"'{city}' 在'{weather}'天气下最值得去的旅游景点推荐及理由"
+
+    try:
+        # 4. 调用API，include_answer=True会返回一个综合性的回答
+        response = tavily_client.search(query, search_depth="basic", include_answer=True)
+
+        # 5. Tavily返回的结果已经非常干净，可以直接使用
+        # response["answer"]是一个基于所有搜索结果的综合回答
+        if response.get("answer"):
+            return response["answer"]
+        
+        # 如果没有综合性回答，则格式化原始结果
+        formatted_results = []
+        for result in response.get("results", []):
+            formatted_results.append(f"- {result['title']}: {result['content']}")
+
+        if not formatted_results:
+            return "抱歉，没有找到相关景点推荐。"
+
+        return "根据搜索，为您找到一下信息：\n" + "\n".join(formatted_results)
+
+    except requests.exceptions.RequestException as e:
+        # 处理网络请求异常
+        return f"错误:执行Tavily搜索时出现问题 - {e}"
+
+def main():
+    print(get_weather("杭州"))
+        
+if __name__ == "__main__":
+    main()
