@@ -5,6 +5,7 @@
 - 学习资料：`Hello-Agents-V1.0.3-20260717.pdf`
 - 每章的练习代码放在 `Chapter-XX/` 目录下
 - 每章的学习重点总结写在对应目录的 `Chapter-XX/README.md` 中
+- 项目写作规约见 [AGENTS.md](AGENTS.md)（Trae 下自动加载于 `.trae/rules/project-rules.md`）
 
 ## 章节索引
 
