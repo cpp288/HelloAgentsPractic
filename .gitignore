@@ -1,2 +1,21 @@
 # 环境变量配置文件，包含密钥，不要提交到仓库
 .env
+
+# Python 字节码缓存
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 虚拟环境
+.venv/
+venv/
+
+# 测试 / 覆盖率缓存
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 编辑器 / 系统
+.DS_Store
+.vscode/
+.idea/

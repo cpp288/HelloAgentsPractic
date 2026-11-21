@@ -1,4 +1,5 @@
-import requests, os
+import requests
+import os
 from tavily import TavilyClient
 from dotenv import load_dotenv
 
@@ -71,9 +72,3 @@ def get_attraction(city: str, weather: str) -> str:
     except requests.exceptions.RequestException as e:
         # 处理网络请求异常
         return f"错误:执行Tavily搜索时出现问题 - {e}"
-
-def main():
-    print(get_weather("杭州"))
-        
-if __name__ == "__main__":
-    main()
