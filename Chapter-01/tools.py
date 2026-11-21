@@ -1,5 +1,9 @@
 import requests, os
 from tavily import TavilyClient
+from dotenv import load_dotenv
+
+# 加载项目根目录下的 .env 环境变量配置
+load_dotenv()
 
 def get_weather(city: str) -> str:
     """
