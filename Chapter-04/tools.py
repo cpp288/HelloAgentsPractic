@@ -1,9 +1,8 @@
-from time import sleep
+import os
+from typing import Any, Dict
 
 from serpapi import SerpApiClient
 from dotenv import load_dotenv
-import os
-from typing import List, Dict
 
 load_dotenv()
 
@@ -44,6 +43,9 @@ def search(query: str) -> str:
                 for i, res in enumerate(results["organic_results"][:3])
             ]
             return "\n\n".join(snippets)
+
+        # 四种情况都没命中时，返回明确提示，避免函数隐式返回 None
+        return "❌ 未在搜索结果中找到可用信息。"
     except Exception as e:
         return f"❌ 调用 SerpApi 时发生错误: {e}"
 
@@ -73,7 +75,14 @@ class ToolExecutor:
         """
         获取已注册工具的执行函数。
         """
-        return self.tools.get(name, {}).get("func")
+        if name in self.tools:
+            return self.tools[name]["func"]
+
+        # 模型输出的工具名大小写可能与注册时不一致，做一次忽略大小写的兜底匹配
+        for tool_name, info in self.tools.items():
+            if tool_name.lower() == name.lower():
+                return info["func"]
+        return None
     
     def getAvailableTools(self) -> str:
         """

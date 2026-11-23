@@ -18,9 +18,11 @@ Question: {question}
 History: {history}
 """
 
-from llm_client import HelloAgentsLLM
-from tools import ToolExecutor
 import re
+from typing import Optional
+
+from llm_client import HelloAgentsLLM
+from tools import ToolExecutor, search
 
 
 class ReActAgent:
@@ -30,7 +32,7 @@ class ReActAgent:
         self.max_steps = max_steps
         self.history = []
     
-    def run(self, question: str) -> str:
+    def run(self, question: str) -> Optional[str]:
         """
         运行ReAct智能体来回答一个问题。
         """
@@ -64,15 +66,20 @@ class ReActAgent:
                 print("❌警告：LLM未返回有效Action，流程终止。")
                 break
 
-            # 4. 执行Action
-            if action.startswith("Finish"):
-                final_answer = re.match(r"Finish\[(.*)\]", action).group(1)
+            # 4. 执行Action（模型可能用反引号包裹或大小写不一，先归一化）
+            action = action.strip().strip("`").strip()
+
+            if action.lower().startswith("finish"):
+                final_answer = self._extract_finish_answer(action)
                 print(f"🎆 最终答案：{final_answer}")
                 return final_answer
-            
+
             tool_name, tool_input = self._parse_action(action)
-            if not tool_name or not tool_input:
+            if tool_name is None:
                 print("... 处理无效Action格式 ...")
+                # 把格式错误写回历史，否则下一轮提示词不变，会重复同样的错误
+                self.history.append(f"Action: {action}")
+                self.history.append("Observation: ❌ Action 格式无效，请严格使用 `工具名[参数]` 或 `Finish[答案]` 的格式。")
                 continue
 
             print(f"🎬 行动：{tool_name}[{tool_input}]")
@@ -81,8 +88,15 @@ class ReActAgent:
             if not tool_function:
                 observation = f"❌ 错误：工具 {tool_name} 未注册。"
             else:
-                observation = tool_function(tool_input)
-            
+                try:
+                    observation = tool_function(tool_input)
+                except Exception as e:
+                    # 工具内部异常不应中断整个 Agent 循环
+                    observation = f"❌ 工具 {tool_name} 执行出错: {e}"
+
+            if observation is None:
+                observation = "(工具没有返回任何内容)"
+
             print(f"👀 观察：{observation}")
 
             # 将本轮的Action和Observation添加到历史记录
@@ -109,16 +123,35 @@ class ReActAgent:
         """
         解析Action字符串，提取工具名称和输入。负责进⼀步解析Action字符串，例如从Search[华为最新⼿机]中提取出⼯具名Search和⼯具输⼊华为最新⼿机。
         """
-        match = re.match(r"(\w+)\[(.*)\]", action_text, re.DOTALL)
+        # 非贪婪：遇到第一个 ] 就停止，避免把后续多行内容一起吞进来
+        match = re.match(r"(\w+)\s*\[(.*?)\]", action_text, re.DOTALL)
         if match:
-            return match.group(1), match.group(2)
+            return match.group(1), match.group(2).strip()
         return None, None
+
+    def _extract_finish_answer(self, action_text: str) -> str:
+        """
+        从 Finish[...] 中提取最终答案。
+        兼容模型常见的几种不规范写法：多行答案、`Finish: [...]`、缺少右括号、反引号包裹等。
+        """
+        match = re.search(r"Finish\s*[:：]?\s*\[(.*)\]", action_text, re.DOTALL | re.IGNORECASE)
+        if match:
+            return match.group(1).strip()
+
+        # 兜底：去掉 Finish 前缀和残留括号，直接把剩下的内容当答案，避免抛异常
+        return re.sub(r"^Finish\s*[:：]?\s*", "", action_text, flags=re.IGNORECASE).strip("[] \n")
 
 # 测试代码
 if __name__ == "__main__":
     try:
         llmClient = HelloAgentsLLM()
         toolExecutor = ToolExecutor()
+        # 必须注册工具，否则智能体的可用工具列表为空，无法调用任何工具
+        toolExecutor.registerTool(
+            "Search",
+            "一个网页搜索引擎。当你需要回答关于时事、事实以及在知识库中找不到的信息时，应使用此工具。",
+            search,
+        )
         reactAgent = ReActAgent(llmClient, toolExecutor)
         
         question = "英伟达最新的GPU型号是什么"

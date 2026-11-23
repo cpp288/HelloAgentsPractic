@@ -185,27 +185,53 @@ while step < max_steps:
 
 ---
 
-## 6. 建议的动手练习顺序
+## 6. 我的练习进度与踩坑记录
 
-按依赖关系从下往上写，每写完一层先单独跑通再往上叠：
+### 6.1 代码现状
+
+| 文件 | 状态 | 内容 |
+|---|---|---|
+| [llm_client.py](file:///Users/chenjian/Documents/HelloAgentsPractice/Chapter-04/llm_client.py) | ✅ 已完成 | `HelloAgentsLLM`：环境变量兜底 + 流式 `think()` |
+| [tools.py](file:///Users/chenjian/Documents/HelloAgentsPractice/Chapter-04/tools.py) | ✅ 已完成 | `search()`（SerpApi）+ `ToolExecutor`（注册/查找/描述） |
+| [react_agent.py](file:///Users/chenjian/Documents/HelloAgentsPractice/Chapter-04/react_agent.py) | ✅ 已完成 | `ReActAgent` 完整闭环 |
+| `plan_solve.py` | ⬜ 未开始 | Planner + Executor + PlanAndSolveAgent |
+| `memory.py` / `reflection.py` | ⬜ 未开始 | Memory + ReflectionAgent |
+
+### 6.2 ReAct 在我代码里的真实调用链
 
 ```
-Chapter-04/
-├── llm_client.py    # HelloAgentsLLM（先跑通一次流式问答）
-├── tools.py         # search() + ToolExecutor（先手动调一次搜索）
-├── react_agent.py   # ReActAgent（第一个完整闭环）
-├── plan_solve.py    # Planner + Executor + PlanAndSolveAgent
-├── memory.py        # Memory
-└── reflection.py    # ReflectionAgent
+ReActAgent.run(question)
+  ├─ tool_executor.getAvailableTools()      → 拼进提示词的"可用工具"清单
+  ├─ llm_client.think(message=messages)     → 流式拿到完整回复
+  ├─ _parse_output(text)                    → 拆出 Thought / Action
+  ├─ action 以 Finish 开头？
+  │    └─ _extract_finish_answer(action)    → 提取最终答案并 return
+  └─ 否则 _parse_action(action)             → (工具名, 参数)
+       ├─ tool_executor.getTool(name)       → 取出函数（含大小写兜底）
+       ├─ 调用工具得到 observation
+       └─ Action / Observation 追加进 history，进入下一轮
 ```
 
-每一步的自检点：
+一句话对照教材：**`max_steps` 是安全阀，`history` 是短期记忆，两个解析器是"翻译官"。**
 
-1. **`llm_client.py`**：`think([{"role":"user","content":"写个快排"}])` 能流式打印并返回完整文本
-2. **`tools.py`**：打印 `getAvailableTools()` 看描述是否清楚；手动执行一次 `search("英伟达最新GPU")` 看返回
-3. **`react_agent.py`**：问「华为最新手机是哪款」，理想输出是 2 步内 `Search → Finish`；**重点观察第 1 步的 Thought 是否主动意识到"我需要搜索"**
-4. **`plan_solve.py`**：用教材的水果店题目，检查计划是否是 4 步 Python 列表、每步结果是否正确传给下一步（15 → 30 → 25 → 70）
-5. **`reflection.py`**：任务是「找出 1 到 n 之间所有素数」；理想轨迹是 试除法 O(n√n) → 反思指出瓶颈 → 优化为埃氏筛 O(n log log n) → 第二轮反思「无需改进」终止
+### 6.3 踩过的坑（均已修复）
+
+| 现象 | 根因 | 修法 |
+|---|---|---|
+| `AttributeError: 'NoneType' object has no attribute 'group'` | `re.match` 没加 `re.DOTALL`，多行 `Finish[...]` 匹配失败返回 `None` | 加 `DOTALL`，并抽出 `_extract_finish_answer()` 做兜底 |
+| 智能体永远不去搜索 | `__main__` 里**没有注册工具**，可用工具列表为空 | 补 `registerTool("Search", 描述, search)` |
+| 明明注册了 `Search`，却报"工具未注册" | 模型输出 `Search`、注册时写 `search`，大小写不一致 | `getTool()` 加忽略大小写的兜底 |
+| 工具一报错，整个 Agent 直接崩 | `tool_function(input)` 裸调用 | 包 `try/except`，错误写进 Observation 继续循环 |
+| 解析失败后原地打转，直到耗尽步数 | `continue` 时**没写 history**，下一轮提示词一模一样 | 把"格式错误"写回 history 引导模型改正 |
+| `search()` 返回 `None`，历史里出现 `Observation: None` | 四个解析分支都没命中时隐式返回 `None` | 补明确的兜底返回值 |
+| 类型注解报 `Any` 未定义 | `from typing import List, Dict` 漏了 `Any` | 补 `from typing import Any, Dict` |
+
+**最大的收获**：这一章真正难的从来不是"调模型"，而是**解析的鲁棒性**——模型的输出永远会比你想的野。
+
+### 6.4 待完成部分的自检点
+
+1. **`plan_solve.py`**：用教材的水果店题目，检查计划是 4 步的 Python 列表、结果是否正确传递（15 → 30 → 25 → 70）
+2. **`reflection.py`**：任务是「找出 1 到 n 之间所有素数」，理想轨迹是 试除法 O(n√n) → 反思指出瓶颈 → 优化为埃氏筛 O(n log log n) → 第二轮「无需改进」终止
 
 **调试提醒**（教材强调的）：
 - 解析失败时，**先把 LLM 原始输出打印出来**，别急着改正则——多半是模型没按格式输出
@@ -219,3 +245,43 @@ Chapter-04/
 - 三种范式的差异只在「思考与行动的组织方式」：交织（ReAct）、分离（Plan-and-Solve）、事后修正（Reflection）。
 - 真正难的不是调模型，而是**工程细节**：格式解析的鲁棒性、死循环防护、工具描述的可读性、上下文的累积方式。
 - 「先手写再上框架」的价值：知道框架帮你做了什么，才有能力在框架不够用时自己造。
+
+---
+
+## 附录：大白话理解第四章
+
+> 这一章的所有代码，其实都在回答同一个问题：**怎么让大模型"干完一件事"？** 答案是把四样东西拼起来。
+
+### 一个通用骨架：全家桶就这四样
+
+| 零件 | 干什么 | 生活比喻 |
+|---|---|---|
+| 循环 | 反复"想一步、做一步" | 做事要一轮一轮推进 |
+| 提示词 | 规定它怎么想、怎么输出 | 给员工的工作手册 |
+| 解析器 | 把模型说的话翻译成代码能执行的动作 | 把口语翻译成操作指令 |
+| 记忆（history/memory） | 记住做过的每一步 | 记事本，防止转头就忘 |
+
+**三种范式的差别，只是这四样东西的摆放方式不同。** 就像同样是灶台、食材、锅，炒、炖、蒸出来的菜不一样。
+
+### ① ReAct：像侦探破案
+侦探不会一开始就知道凶手，他**走一步、看一步**：现场有什么线索（Thought）→ 去查这个线索（Action）→ 查到什么（Observation）→ 再决定下一步。
+- 好处：能随机应变，查错了能换个方向再查。
+- 坏处：走得慢、容易瞎转悠（所以要设 `max_steps` 上限）。
+
+**你踩的那个 bug 特别有代表性**：侦探最后说"我找到答案了（Finish）"，但这句话是分两行说的，你的翻译官（正则）只认一行，于是崩溃了。所以要给翻译官留点余地。
+
+### ② Plan-and-Solve：像装修队
+装修队不会边砸墙边想布局，而是**先出一张完整图纸，再照着图纸一项项施工**。
+- 好处：有条理、不容易跑偏、每步都能接着说上一句（今天刷完墙，明天铺地板）。
+- 坏处：图纸是一次性画好的，施工中发现水管不对也得硬着头皮做下去（所以教材留了"动态重规划"的作业）。
+
+### ③ Reflection：像写作文
+写作文的做法是：**先写初稿 → 自己当老师批改 → 照着批注改**，改到自己挑不出毛病为止。
+- 好处：第一版能交差，第二版才是好文章。
+- 坏处：每多改一轮都要多花时间和钱，所以适合"质量比速度重要"的事。
+
+### 为什么非要手写一遍？
+因为框架会替你做好这三件脏活：**解析模型输出、重试失败的工具调用、防止死循环**。你不手写一遍，就只会在报错时干瞪眼——这正是你这次删 bug 花了最多时间的地方。
+
+### 一句话记三章
+> **ReAct 走一步看一步，Plan 先画图纸再干活，Reflection 写完再批改。三者共用一套骨架：循环 + 提示词 + 解析器 + 记忆。**
