@@ -13,7 +13,7 @@
 |---|---|---|
 | 第一章 初识智能体 | [Chapter-01/README.md](Chapter-01/README.md) | `Chapter-01/` |
 | 第二章 智能体发展史 | [Chapter-02/README.md](Chapter-02/README.md) | 无（本章为理论） |
-| 第三章 大语言模型基础 | 待补充 | 待补充 |
+| 第三章 大语言模型基础 | [Chapter-03/README.md](Chapter-03/README.md) | 无（未在本项目放置） |
 | 第四章 智能体经典范式构建 | 待补充 | 待补充 |
 | 第五章 基于低代码平台的智能体搭建 | 待补充 | 待补充 |
 | 第六章 框架开发实践 | 待补充 | 待补充 |
