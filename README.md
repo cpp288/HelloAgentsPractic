@@ -16,7 +16,7 @@
 | 第三章 大语言模型基础 | [Chapter-03/README.md](Chapter-03/README.md) | 无（未在本项目放置） |
 | 第四章 智能体经典范式构建 | [Chapter-04/README.md](Chapter-04/README.md) | `Chapter-04/` |
 | 第五章 基于低代码平台的智能体搭建 | [Chapter-05/README.md](Chapter-05/README.md) | 无（本章为平台图形化操作） |
-| 第六章 框架开发实践 | 待补充 | 待补充 |
+| 第六章 框架开发实践 | [Chapter-06/README.md](Chapter-06/README.md) | 无（示例代码见教材 code 目录） |
 | 第七章 构建你的 Agent 框架 | 待补充 | 待补充 |
 | 第八章 记忆与检索 | 待补充 | 待补充 |
 | 第九章 上下文工程 | 待补充 | 待补充 |
