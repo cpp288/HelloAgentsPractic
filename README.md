@@ -3,20 +3,21 @@
 基于 Datawhale 开源教程 **Hello-Agents（《从零开始构建智能体》）** 的学习与配套代码练习仓库。
 
 - 学习资料：`Hello-Agents-V1.0.3-20260717.pdf`
-- 每章的练习代码放在 `Chapter-XX/` 目录下
-- 每章的学习重点总结写在对应目录的 `Chapter-XX/README.md` 中
+- 每章目录命名规则：`XX-章节名称/`（如 `04-智能体经典范式构建/`）
+- 每章的练习代码放在对应章节目录下
+- 每章的学习重点总结写在对应目录的 `README.md` 中
 - 项目写作规约见 [AGENTS.md](AGENTS.md)（Trae 下自动加载于 `.trae/rules/project-rules.md`）
 
 ## 章节索引
 
 | 章节 | 总结 | 练习代码 |
 |---|---|---|
-| 第一章 初识智能体 | [Chapter-01/README.md](Chapter-01/README.md) | `Chapter-01/` |
-| 第二章 智能体发展史 | [Chapter-02/README.md](Chapter-02/README.md) | 无（本章为理论） |
-| 第三章 大语言模型基础 | [Chapter-03/README.md](Chapter-03/README.md) | 无（未在本项目放置） |
-| 第四章 智能体经典范式构建 | [Chapter-04/README.md](Chapter-04/README.md) | `Chapter-04/` |
-| 第五章 基于低代码平台的智能体搭建 | [Chapter-05/README.md](Chapter-05/README.md) | 无（本章为平台图形化操作） |
-| 第六章 框架开发实践 | [Chapter-06/README.md](Chapter-06/README.md) | 无（示例代码见教材 code 目录） |
+| 第一章 初识智能体 | [README.md](01-初识智能体/README.md) | `01-初识智能体/` |
+| 第二章 智能体发展史 | [README.md](02-智能体发展史/README.md) | 无（本章为理论） |
+| 第三章 大语言模型基础 | [README.md](03-大语言模型基础/README.md) | 无（未在本项目放置） |
+| 第四章 智能体经典范式构建 | [README.md](04-智能体经典范式构建/README.md) | `04-智能体经典范式构建/` |
+| 第五章 基于低代码平台的智能体搭建 | [README.md](05-基于低代码平台的智能体搭建/README.md) | 无（本章为平台图形化操作） |
+| 第六章 框架开发实践 | [README.md](06-框架开发实践/README.md) | 无（示例代码见教材 code 目录） |
 | 第七章 构建你的 Agent 框架 | 待补充 | 待补充 |
 | 第八章 记忆与检索 | 待补充 | 待补充 |
 | 第九章 上下文工程 | 待补充 | 待补充 |
@@ -30,4 +31,4 @@
 
 ## 环境说明
 - 练习代码使用 Python，依赖通过 `.env` 配置 API Key（已在 `.gitignore` 中忽略）
-- 运行某章练习时，进入对应 `Chapter-XX/` 目录执行入口脚本即可
+- 运行某章练习时，进入对应 `XX-章节名称/` 目录执行入口脚本即可
