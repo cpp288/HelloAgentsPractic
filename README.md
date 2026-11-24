@@ -21,7 +21,7 @@
 | 第七章 构建你的 Agent 框架 | [README.md](07-构建你的Agent框架/README.md) | 可 pip 安装 hello-agents==0.1.1 体验，也可从零实现 |
 | 第八章 记忆与检索 | [README.md](08-记忆与检索/README.md) | hello-agents[all]==0.2.0（需 Qdrant + Neo4j + spaCy） |
 | 第九章 上下文工程 | [README.md](09-上下文工程/README.md) | hello-agents[all]==0.2.8 |
-| 第十章 智能体通信协议 | 待补充 | 待补充 |
+| 第十章 智能体通信协议 | [README.md](10-智能体通信协议/README.md) | hello-agents[protocol]==0.2.2（需 Node.js） |
 | 第十一章 Agentic-RL | 待补充 | 待补充 |
 | 第十二章 智能体性能评估 | 待补充 | 待补充 |
 | 第十三章 智能旅行助手（综合案例） | 待补充 | 待补充 |
