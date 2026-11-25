@@ -24,7 +24,7 @@
 | 第十章 智能体通信协议 | [README.md](10-智能体通信协议/README.md) | hello-agents[protocol]==0.2.2（需 Node.js） |
 | 第十一章 Agentic-RL | [README.md](11-Agentic-RL/README.md) | hello-agents[rl]==0.2.5（需 GPU + TRL + Qwen3-0.6B） |
 | 第十二章 智能体性能评估 | [README.md](12-智能体性能评估/README.md) | hello-agents[evaluation]==0.2.7（GAIA 需 HF_TOKEN） |
-| 第十三章 智能旅行助手（综合案例） | 待补充 | 待补充 |
+| 第十三章 智能旅行助手（综合案例） | [README.md](13-智能旅行助手/README.md) | hello-agents + FastAPI + Vue3 + TypeScript（全栈项目，需 Python 3.10+/Node 16+，以及 LLM/高德/Unsplash API Key） |
 | 第十四章 自动化深度研究智能体 | 待补充 | 待补充 |
 | 第十五章 构建赛博小镇 | 待补充 | 待补充 |
 | 第十六章 毕业设计 | 待补充 | 待补充 |
