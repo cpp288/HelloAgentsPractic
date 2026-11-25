@@ -520,29 +520,49 @@ weather 超时 → PlanState.degraded += ["weather"]
 
 ### 11.2 启动命令
 
+**日常用脚本（推荐）**：`script/` 下三个服务各自支持 `start|stop|restart|status|logs`，`api.sh` 每次启动自动 `mvn package`，改完代码直接 restart 即可。
+
 ```bash
-# 0. 一次性初始化（表结构见 4.6）
+cd script
+./all.sh start        # 顺序拉起 agent(8000) → api(8080) → web(5173)
+./all.sh status       # 查看三个服务端口与健康检查
+./all.sh restart      # 全部重启（会自动重新打包 Java）
+./all.sh stop         # 反序停止
+
+./api.sh restart      # 只重启 Java；加 --skip-build 跳过打包
+./agent.sh logs       # 跟踪某个服务日志（Ctrl+C 不影响服务）
+```
+
+等价的手工命令（首次部署 / 排查问题用）。**没有配置任何 Key 也能跑通**：Agent 自动退化为内置样例数据（MockPlanner），Java 照常算预算、推 SSE。
+
+```bash
+# 0. 一次性初始化（也可以跳过，api 启动时会自动执行 schema.sql）
 mysql -uroot -p -e "CREATE DATABASE IF NOT EXISTS trip_planner DEFAULT CHARSET utf8mb4;"
-mysql -uroot -p trip_planner < api/src/main/resources/schema.sql
 
 # 1. Agent 层（先起，Java 依赖它）
 cd agent_service
-python -m venv .venv && source .venv/bin/activate
+python3 -m venv .venv && source .venv/bin/activate
 pip install -e .
+cp .env.example .env          # 可选：填 LLM/高德 Key；留空即走 mock
 mkdir -p logs
-uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload 2>&1 | tee logs/agent.log
+uvicorn app.main:app --host 127.0.0.1 --port 8000 2>&1 | tee logs/agent.log
 
 # 2. 业务层
 cd api
 mkdir -p logs
-mvn spring-boot:run -Dspring-boot.run.profiles=local 2>&1 | tee logs/api.log
+mvn -q clean package -DskipTests
+java -jar target/trip-api-0.1.0.jar 2>&1 | tee -a logs/api.log
 
 # 3. 前端
 cd web
-npm install && npm run dev
+npm install
+npm run dev                   # http://localhost:5173 ，/api 已代理到 8080
 ```
 
 启动自检顺序：`curl 127.0.0.1:8000/internal/v1/health`（agent 就绪）→ `curl 127.0.0.1:8080/actuator/health`（api 就绪，含 MySQL/Redis 探针）→ 打开前端。
+
+**从 mock 切到真实依赖**：在 `agent_service/.env` 填 `LLM_API_KEY`（默认 `deepseek-chat`）即切真实 LLM，填 `AMAP_API_KEY` 即切高德实时数据；Java 侧填环境变量 `UNSPLASH_ACCESS_KEY` 才会给景点配图（不填则保持渐变占位）。改完重启对应进程即可。
+
 
 ### 11.3 日志规范（一次请求可追踪）
 
@@ -591,23 +611,26 @@ grep "A1B2C3D4" logs/api.log logs/agent.log
 
 ### 11.4 配置
 
-| 变量（api） | 示例 |
-|---|---|
-| `spring.datasource.url` | `jdbc:mysql://127.0.0.1:3306/trip_planner?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8` |
-| `spring.datasource.username` / `password` | 本机 MySQL 账号 |
-| `spring.data.redis.host` / `port` | `127.0.0.1` / `6379` |
-| `agent.base-url` | `http://127.0.0.1:8000` |
-| `internal.token` | 与 agent 侧一致 |
+**api**：`src/main/resources/application.yml`，全部可用环境变量覆盖。
 
-| 变量（agent） | 示例 |
+| 配置项 | 默认值 |
 |---|---|
-| `LLM_BASE_URL` / `LLM_API_KEY` / `LLM_MODEL` | 模型接入 |
-| `AMAP_API_KEY` / `AMAP_MCP_URL` | 高德密钥与 MCP 地址 |
-| `UNSPLASH_ACCESS_KEY` | 图片服务 |
-| `INTERNAL_TOKEN` | 内部鉴权 |
-| `LANGFUSE_*` | 观测（可选，本地可关） |
+| `spring.datasource.url` | `jdbc:mysql://127.0.0.1:3306/trip_planner?...` |
+| `MYSQL_USER` / `MYSQL_PASSWORD` | `root` / `root` |
+| `REDIS_HOST` / `REDIS_PORT` | `127.0.0.1` / `6379` |
+| `AGENT_BASE_URL` | `http://127.0.0.1:8000` |
+| `INTERNAL_TOKEN` | `dev-internal-token`（须与 agent 一致） |
+| `UNSPLASH_ACCESS_KEY` | 空（空则不配图） |
 
-配置载体：Java 用 `application-local.yml`，Python 用 `.env`，两者都在 `.gitignore` 中。MySQL 连接池用 HikariCP，本地默认 10 个连接足够。
+**agent**：`agent_service/.env`（已在 `.gitignore` 中）。
+
+| 变量 | 说明 |
+|---|---|
+| `LLM_MOCK` | `true` 强制走 MockPlanner；`false` 且 `LLM_API_KEY` 为空时也自动走 mock |
+| `LLM_BASE_URL` / `LLM_API_KEY` / `LLM_MODEL` | 模型接入，默认 DeepSeek |
+| `AMAP_API_KEY` | 空则景点/天气/酒店使用内置样例数据 |
+| `INTERNAL_TOKEN` | 内部鉴权，与 Java 侧一致 |
+
 
 ---
 

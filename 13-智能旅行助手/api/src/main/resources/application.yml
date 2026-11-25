@@ -1,0 +1,59 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: trip-api
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/trip_planner?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&characterEncoding=utf8
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:root}
+    hikari:
+      maximum-pool-size: 10
+      pool-name: trip-pool
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+      continue-on-error: false
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: Asia/Shanghai
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      timeout: 2s
+      connect-timeout: 2s
+
+agent:
+  base-url: ${AGENT_BASE_URL:http://127.0.0.1:8000}
+  internal-token: ${INTERNAL_TOKEN:dev-internal-token}
+  timeout-seconds: 120
+
+app:
+  rate-limit-per-minute: 10
+  idempotency-minutes: 10
+  unsplash-access-key: ${UNSPLASH_ACCESS_KEY:vcnzxUFVdUALUQNHcnT5tP2LWCMD-54b68V06i5JaS8}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    root: INFO
+    com.trip: DEBUG
